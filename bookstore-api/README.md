@@ -18,16 +18,10 @@ A simple REST API for managing books in a bookstore, built with Go and Gin.
 
 1. Clone the repository
 
-2. Start Kafka:
+2. Start Kafka using Docker:
 
    ```bash
-   # Using Docker (recommended)
-   docker run -d --name kafka \
-     -p 9092:9092 \
-     -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092 \
-     -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
-     -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 \
-     wurstmeister/kafka
+   docker run -d --name broker apache/kafka:latest
    ```
 
 3. Copy the `.env.example` file to `.env` and update with your credentials:
