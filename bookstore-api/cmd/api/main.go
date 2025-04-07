@@ -2,12 +2,11 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	"bookstore-api/handlers"
 	"bookstore-api/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -15,19 +14,19 @@ func main() {
 	store := models.NewBookStore()
 	handler := handlers.NewBookHandler(store)
 
-	// Create a new router
-	router := mux.NewRouter()
+	// Create a new Gin router
+	router := gin.Default()
 
 	// Define routes
-	router.HandleFunc("/books", handler.CreateBook).Methods("POST")
-	router.HandleFunc("/books", handler.GetAllBooks).Methods("GET")
-	router.HandleFunc("/books/{id}", handler.GetBook).Methods("GET")
-	router.HandleFunc("/books/{id}", handler.UpdateBook).Methods("PUT")
-	router.HandleFunc("/books/{id}", handler.DeleteBook).Methods("DELETE")
+	router.POST("/books", handler.CreateBook)
+	router.GET("/books", handler.GetAllBooks)
+	router.GET("/books/:id", handler.GetBook)
+	router.PUT("/books/:id", handler.UpdateBook)
+	router.DELETE("/books/:id", handler.DeleteBook)
 
 	// Start the server
 	log.Println("Server starting on port 8080...")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	if err := router.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}
 } 

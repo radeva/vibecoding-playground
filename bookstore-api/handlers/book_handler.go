@@ -1,13 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
 	"bookstore-api/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
 type BookHandler struct {
@@ -19,10 +18,10 @@ func NewBookHandler(store *models.BookStore) *BookHandler {
 }
 
 // CreateBook handles the creation of a new book
-func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
+func (h *BookHandler) CreateBook(c *gin.Context) {
 	var book models.Book
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -30,70 +29,62 @@ func (h *BookHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
 	book.ID = time.Now().Format("20060102150405")
 	h.store.Books[book.ID] = book
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(book)
+	c.JSON(http.StatusCreated, book)
 }
 
 // GetBook retrieves a book by ID
-func (h *BookHandler) GetBook(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (h *BookHandler) GetBook(c *gin.Context) {
+	id := c.Param("id")
 
 	book, exists := h.store.Books[id]
 	if !exists {
-		http.Error(w, "Book not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(book)
+	c.JSON(http.StatusOK, book)
 }
 
 // GetAllBooks retrieves all books
-func (h *BookHandler) GetAllBooks(w http.ResponseWriter, r *http.Request) {
+func (h *BookHandler) GetAllBooks(c *gin.Context) {
 	books := make([]models.Book, 0, len(h.store.Books))
 	for _, book := range h.store.Books {
 		books = append(books, book)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(books)
+	c.JSON(http.StatusOK, books)
 }
 
 // UpdateBook updates an existing book
-func (h *BookHandler) UpdateBook(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (h *BookHandler) UpdateBook(c *gin.Context) {
+	id := c.Param("id")
 
 	if _, exists := h.store.Books[id]; !exists {
-		http.Error(w, "Book not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
 		return
 	}
 
 	var book models.Book
-	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&book); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	book.ID = id
 	h.store.Books[id] = book
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(book)
+	c.JSON(http.StatusOK, book)
 }
 
 // DeleteBook deletes a book
-func (h *BookHandler) DeleteBook(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+func (h *BookHandler) DeleteBook(c *gin.Context) {
+	id := c.Param("id")
 
 	if _, exists := h.store.Books[id]; !exists {
-		http.Error(w, "Book not found", http.StatusNotFound)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
 		return
 	}
 
 	delete(h.store.Books, id)
-	w.WriteHeader(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 } 
