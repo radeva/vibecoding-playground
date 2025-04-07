@@ -5,16 +5,21 @@ import (
 	"time"
 
 	"bookstore-api/models"
+	"bookstore-api/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type BookHandler struct {
-	store *models.BookStore
+	store      *models.BookStore
+	smsService *services.SMSService
 }
 
 func NewBookHandler(store *models.BookStore) *BookHandler {
-	return &BookHandler{store: store}
+	return &BookHandler{
+		store:      store,
+		smsService: services.NewSMSService(),
+	}
 }
 
 // CreateBook handles the creation of a new book
@@ -28,6 +33,12 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	// Generate a simple ID (in a real app, use UUID)
 	book.ID = time.Now().Format("20060102150405")
 	h.store.Books[book.ID] = book
+
+	// Send SMS notification
+	// if err := h.smsService.SendBookAddedNotification(book.Title, book.Author); err != nil {
+	// 	// Log the error but don't fail the request
+	// 	c.Error(err)
+	// }
 
 	c.JSON(http.StatusCreated, book)
 }
