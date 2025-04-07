@@ -7,6 +7,7 @@ import (
 
 	"bookstore-api/handlers"
 	"bookstore-api/models"
+	"bookstore-api/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -20,7 +21,33 @@ func main() {
 
 	// Initialize the book store
 	store := models.NewBookStore()
-	handler := handlers.NewBookHandler(store)
+
+	// Initialize Kafka producer
+	producer, err := services.NewKafkaProducer()
+	if err != nil {
+		log.Fatalf("Failed to create Kafka producer: %v", err)
+	}
+	defer producer.Close()
+
+	// Initialize SMS service
+	smsService := services.NewSMSService()
+
+	// Initialize and start Kafka consumer
+	consumer, err := services.NewKafkaConsumer(smsService)
+	if err != nil {
+		log.Fatalf("Failed to create Kafka consumer: %v", err)
+	}
+	defer consumer.Close()
+
+	// Start consuming messages in a separate goroutine
+	go func() {
+		if err := consumer.StartConsuming(); err != nil {
+			log.Printf("Error consuming messages: %v", err)
+		}
+	}()
+
+	// Initialize handler with both store and producer
+	handler := handlers.NewBookHandler(store, producer)
 
 	// Create a new Gin router
 	router := gin.Default()

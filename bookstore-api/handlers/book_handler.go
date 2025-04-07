@@ -11,14 +11,14 @@ import (
 )
 
 type BookHandler struct {
-	store      *models.BookStore
-	smsService *services.SMSService
+	store    *models.BookStore
+	producer *services.KafkaProducer
 }
 
-func NewBookHandler(store *models.BookStore) *BookHandler {
+func NewBookHandler(store *models.BookStore, producer *services.KafkaProducer) *BookHandler {
 	return &BookHandler{
-		store:      store,
-		smsService: services.NewSMSService(),
+		store:    store,
+		producer: producer,
 	}
 }
 
@@ -34,11 +34,11 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 	book.ID = time.Now().Format("20060102150405")
 	h.store.Books[book.ID] = book
 
-	// Send SMS notification
-	// if err := h.smsService.SendBookAddedNotification(book.Title, book.Author); err != nil {
-	// 	// Log the error but don't fail the request
-	// 	c.Error(err)
-	// }
+	// Send message to Kafka
+	if err := h.producer.SendBookMessage(book); err != nil {
+		// Log the error but don't fail the request
+		c.Error(err)
+	}
 
 	c.JSON(http.StatusCreated, book)
 }
